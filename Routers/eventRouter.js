@@ -10,9 +10,9 @@ const {
 const eventRouter = express.Router();
 
 eventRouter.use(authMiddleware);
-eventRouter.get("/api/events", getAllEvents);
-eventRouter.post("/api/events", addEvent);
-eventRouter.delete("/api/events/:eventId", deleteEvent);
-eventRouter.put("/api/events/:eventId", editEvent);
+eventRouter.get("/", getAllEvents);
+eventRouter.post("/", addEvent);
+eventRouter.delete("/:eventId", deleteEvent);
+eventRouter.put("/:eventId", editEvent);
 
 module.exports = eventRouter;

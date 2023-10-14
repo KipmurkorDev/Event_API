@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const eventSchema = new mongoose.Schema({
-  envetName: {
+  eventName: {
     type: String,
     required: true,
     trim: true,
@@ -13,8 +13,8 @@ const eventSchema = new mongoose.Schema({
   },
 
   location: {
-    type: "Point",
-    coordinates: [12.9716, 77.5946],
+    type: [Number],
+    required: true,
   },
   dateTime: {
     type: Date,
