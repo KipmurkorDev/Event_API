@@ -23,6 +23,11 @@ const addEvent = async (req, res) => {
     if (!eventName) {
       errors.push("Event Name is required.");
     }
+    if (!req.file) {
+      return res
+        .status(400)
+        .json({ status: "error", message: "Event Image is required." });
+    }
 
     if (!category) {
       errors.push("Category is required.");
@@ -42,7 +47,13 @@ const addEvent = async (req, res) => {
         .json({ status: "error", message: "Validation failed", errors });
     }
 
-    const event = new eventModel({ eventName, category, location, dateTime });
+    const event = new eventModel({
+      eventName,
+      image: `/uploads/${req.file.filename}`,
+      category,
+      location,
+      dateTime,
+    });
     const savedEvent = await event.save();
     res
       .status(201)
