@@ -1,6 +1,9 @@
 const express = require("express");
 const multer = require("multer");
 
+const eventRouter = express.Router();
+
+const { storage } = require("../Script/cloudinary");
 const authMiddleware = require("../Middleware/authVerification");
 const {
   getAllEvents,
@@ -8,21 +11,13 @@ const {
   deleteEvent,
   editEvent,
 } = require("../Controllers/eventsController");
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "./uploads");
-  },
-  filename: function (req, file, cb) {
-    cb(null, file.originalname);
-  },
-});
-const upload = multer({ storage: storage });
-const eventRouter = express.Router();
+
+const upload = multer({ storage });
 
 eventRouter.use(authMiddleware);
 eventRouter.get("/", getAllEvents);
-eventRouter.post("/", upload.single("profile-file"), addEvent);
+eventRouter.post("/", upload.single("image"), addEvent);
 eventRouter.delete("/:eventId", deleteEvent);
-eventRouter.put("/:eventId", editEvent);
+eventRouter.put("/:eventId", upload.single("image"), editEvent);
 
 module.exports = eventRouter;

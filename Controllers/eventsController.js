@@ -1,5 +1,6 @@
 const eventModel = require("../Model/eventModel");
 const mongoose = require("mongoose");
+const { cloudinary } = require("../Script/cloudinary");
 // Get all events
 const getAllEvents = async (req, res) => {
   try {
@@ -17,16 +18,14 @@ const getAllEvents = async (req, res) => {
 // Add a new event
 const addEvent = async (req, res) => {
   try {
-    const { eventName, category, location, dateTime } = req.body;
+    const { eventName, category, location, dateTime } = JSON.parse(
+      req.body.data
+    );
+
     const errors = [];
 
     if (!eventName) {
       errors.push("Event Name is required.");
-    }
-    if (!req.file) {
-      return res
-        .status(400)
-        .json({ status: "error", message: "Event Image is required." });
     }
 
     if (!category) {
@@ -46,18 +45,23 @@ const addEvent = async (req, res) => {
         .status(400)
         .json({ status: "error", message: "Validation failed", errors });
     }
+    const parts = req.file.path.split("/");
+    const publicId = parts[parts.length - 1].split(".")[0];
 
     const event = new eventModel({
       eventName,
-      image: `/uploads/${req.file.filename}`,
+      image: req.file.path,
+      imagePublicId: publicId,
       category,
       location,
       dateTime,
     });
     const savedEvent = await event.save();
-    res
+    return res
       .status(201)
       .json({ status: "success", message: "Event added", data: savedEvent });
+
+    // Handle any errors during the upload
   } catch (error) {
     return res.status(500).json({ status: "error", message: error.message });
   }
@@ -67,7 +71,6 @@ const addEvent = async (req, res) => {
 const deleteEvent = async (req, res) => {
   try {
     const eventId = req.params.eventId;
-
     // Check if the event ID is a valid ObjectId
     if (!mongoose.Types.ObjectId.isValid(eventId)) {
       return res.status(400).json({
@@ -75,8 +78,7 @@ const deleteEvent = async (req, res) => {
         message: "Invalid event ID.",
       });
     }
-
-    // Check if the event with the provided ID exists
+    // Find the event by ID
     const event = await eventModel.findOne({ _id: eventId });
     if (!event) {
       return res.status(404).json({
@@ -84,42 +86,64 @@ const deleteEvent = async (req, res) => {
         message: "Event not found.",
       });
     }
-
-    // If the event exists, delete it
-    await eventModel.deleteOne({ _id: eventId });
-    return res.status(200).json({
-      status: "success",
-      message: "Event deleted",
-    });
+    if (event.image) {
+      // Delete the image from Cloudinary
+      cloudinary.uploader.destroy(event.imagePublicId, (error, result) => {
+        if (error) {
+          console.error("Error deleting image from Cloudinary: ", error);
+          return res.status(500).json({
+            status: "error",
+            message: "Failed to delete the event's image from Cloudinary.",
+          });
+        }
+        // Image deleted successfully, now remove the event from the database
+        deleteEventAndRespond(res, event);
+      });
+    } else {
+      // No image associated with the event, simply remove it from the database
+      deleteEventAndRespond(res, event);
+    }
   } catch (error) {
     return res.status(500).json({ status: "error", message: error.message });
   }
 };
+
+async function deleteEventAndRespond(res, event) {
+  try {
+    await eventModel.deleteOne({ _id: event._id });
+    return res.status(200).json({
+      status: "success",
+      message:
+        "Event deleted successfully" + (event.image ? " with image." : "."),
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to delete the event from the database: " + error.message,
+    });
+  }
+}
 
 // Edit an event
 const editEvent = async (req, res) => {
   try {
     const eventId = req.params.eventId;
 
-    // Check if the event ID is a valid ObjectId
     if (!mongoose.Types.ObjectId.isValid(eventId)) {
-      return res.status(400).json({
-        status: "error",
-        message: "Invalid event ID.",
-      });
+      return res
+        .status(400)
+        .json({ status: "error", message: "Invalid event ID." });
     }
+    // Check if at least one field has been provided
+    console.log(req.body);
 
-    const { eventName, category, location, dateTime } = req.body;
-
-    // Check if at least one field is provided
-    if (!eventName && !category && !location && !dateTime) {
+    if (Object.keys(req.body).length === 0 && !req.file) {
       return res.status(400).json({
         status: "error",
         message:
-          "At least one field of data (eventName, category, location, dateTime) is required.",
+          "At least one field of data (eventName, category, location, dateTime, or an image) is required for the update.",
       });
     }
-
     const event = await eventModel.findOne({ _id: eventId });
 
     if (!event) {
@@ -128,23 +152,41 @@ const editEvent = async (req, res) => {
         .json({ status: "error", message: "The event does not exist" });
     }
 
-    const updateEvent = await eventModel.updateOne(
-      { _id: eventId },
-      {
-        $set: {
-          eventName,
-          category,
-          location,
-          dateTime,
-        },
-      }
-    );
+    // Update event details if provided
+    if (req.body.eventName) {
+      event.eventName = req.body.eventName;
+    }
+    if (req.body.category) {
+      event.category = req.body.category;
+    }
+    if (req.body.location) {
+      event.location = req.body.location;
+    }
+    if (req.body.dateTime) {
+      event.dateTime = req.body.dateTime;
+    }
 
-    return res
-      .status(200)
-      .json({ status: "success", message: "Event edited", data: updateEvent });
+    // Check if an image file is provided in the request
+    if (req.file) {
+      const result = req.file.path;
+      const parts = result.split("/");
+      const publicId = parts[parts.length - 1].split(".")[0];
+      event.image = result;
+      event.imagePublicId = publicId;
+    }
+
+    await event.save();
+
+    return res.status(200).json({
+      status: "success",
+      message: "Event updated successfully",
+      data: event,
+    });
   } catch (error) {
-    res.status(500).json({ status: "error", message: error.message });
+    return res.status(500).json({
+      status: "error",
+      message: "An error occurred while editing the event",
+    });
   }
 };
 

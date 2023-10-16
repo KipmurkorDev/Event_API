@@ -1,5 +1,4 @@
 const express = require("express");
-const multer = require("multer");
 require("dotenv").config();
 const app = express();
 const cors = require("cors");
@@ -11,17 +10,9 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(morgan("tiny"));
 app.use(express.static("uploads"));
+app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "./uploads");
-  },
-  filename: function (req, file, cb) {
-    cb(null, file.originalname);
-  },
-});
-const upload = multer({ storage: storage });
 mongoose
   .connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
