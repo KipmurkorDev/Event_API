@@ -14,10 +14,24 @@ const getAllEvents = async (req, res) => {
     return res.status(500).json({ status: "error", message: error.message });
   }
 };
+const getEventsByUsers = async (req, res) => {
+  try {
+    const userId = res.locals.author;
+    const events = await eventModel.find({ createdBy: userId });
+    return res.status(200).json({
+      status: "success",
+      message: "All events retrieved",
+      data: events,
+    });
+  } catch (error) {
+    return res.status(500).json({ status: "error", message: error.message });
+  }
+};
 
 // Add a new event
 const addEvent = async (req, res) => {
   try {
+    const createdBy = res.locals.author;
     const { eventName, category, location, dateTime } = JSON.parse(
       req.body.data
     );
@@ -53,6 +67,7 @@ const addEvent = async (req, res) => {
       image: req.file.path,
       imagePublicId: publicId,
       category,
+      createdBy,
       location,
       dateTime,
     });
@@ -71,15 +86,19 @@ const addEvent = async (req, res) => {
 const deleteEvent = async (req, res) => {
   try {
     const eventId = req.params.eventId;
+    const createdBy = res.locals.author;
     // Check if the event ID is a valid ObjectId
-    if (!mongoose.Types.ObjectId.isValid(eventId)) {
+    if (
+      !mongoose.Types.ObjectId.isValid(eventId) &&
+      !mongoose.Types.ObjectId.isValid(eventId)
+    ) {
       return res.status(400).json({
         status: "error",
         message: "Invalid event ID.",
       });
     }
     // Find the event by ID
-    const event = await eventModel.findOne({ _id: eventId });
+    const event = await eventModel.findOne({ _id: eventId, createdBy });
     if (!event) {
       return res.status(404).json({
         status: "error",
@@ -195,4 +214,5 @@ module.exports = {
   addEvent,
   deleteEvent,
   editEvent,
+  getEventsByUsers,
 };

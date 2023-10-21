@@ -6,10 +6,13 @@ const eventSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
-
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Users",
+  },
   image: {
     type: String,
-    // required: true,
+    required: true,
   },
   imagePublicId: {
     type: String,

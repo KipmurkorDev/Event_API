@@ -14,7 +14,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 mongoose
-  .connect(process.env.MONGODB_URI, {
+  .connect(process.env.DB_URL, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
@@ -23,7 +23,7 @@ mongoose
 
 app.use("", router);
 
-const port = process.env.PORT || 80;
+const port = process.env.PORT || 300;
 app.listen(port, () => {
   console.log(`Server running ....${port}`);
 });

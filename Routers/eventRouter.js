@@ -9,13 +9,14 @@ const {
   getAllEvents,
   addEvent,
   deleteEvent,
+  getEventsByUsers,
   editEvent,
 } = require("../Controllers/eventsController");
 
 const upload = multer({ storage });
-
-eventRouter.use(authMiddleware);
 eventRouter.get("/", getAllEvents);
+eventRouter.use(authMiddleware);
+eventRouter.get("/my-events", getEventsByUsers);
 eventRouter.post("/", upload.single("image"), addEvent);
 eventRouter.delete("/:eventId", deleteEvent);
 eventRouter.put("/:eventId", upload.single("image"), editEvent);
