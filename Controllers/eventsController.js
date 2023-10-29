@@ -5,6 +5,7 @@ const { cloudinary } = require("../Script/cloudinary");
 const getAllEvents = async (req, res) => {
   try {
     const events = await eventModel.find({});
+
     return res.status(200).json({
       status: "success",
       message: "All events retrieved",

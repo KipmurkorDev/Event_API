@@ -16,11 +16,11 @@ const {
 } = require("../Controllers/eventsController");
 
 const upload = multer({ storage });
+eventRouter.get("/my-events", authMiddleware, getEventsByUsers);
 eventRouter.get("/", getAllEvents);
 eventRouter.get("/:eventId", getEvent);
 eventRouter.post("/category", getCategory);
 eventRouter.use(authMiddleware);
-eventRouter.get("/my-events", getEventsByUsers);
 eventRouter.post("/", upload.single("image"), addEvent);
 eventRouter.delete("/:eventId", deleteEvent);
 eventRouter.put("/:eventId", upload.single("image"), editEvent);
