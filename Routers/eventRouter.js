@@ -7,7 +7,9 @@ const { storage } = require("../Script/cloudinary");
 const authMiddleware = require("../Middleware/authVerification");
 const {
   getAllEvents,
+  getEvent,
   addEvent,
+  getCategory,
   deleteEvent,
   getEventsByUsers,
   editEvent,
@@ -15,6 +17,8 @@ const {
 
 const upload = multer({ storage });
 eventRouter.get("/", getAllEvents);
+eventRouter.get("/:eventId", getEvent);
+eventRouter.post("/category", getCategory);
 eventRouter.use(authMiddleware);
 eventRouter.get("/my-events", getEventsByUsers);
 eventRouter.post("/", upload.single("image"), addEvent);

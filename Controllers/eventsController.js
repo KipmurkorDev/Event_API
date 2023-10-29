@@ -27,38 +27,91 @@ const getEventsByUsers = async (req, res) => {
     return res.status(500).json({ status: "error", message: error.message });
   }
 };
+const getCategory = async (req, res) => {
+  try {
+    const { category } = req.body;
+    const regex = new RegExp(category, "i");
+    const events = await eventModel.find({ category: regex });
+
+    if (events.length === 0) {
+      return res.status(404).json({
+        status: "error",
+        message: "No events found for the specified category",
+      });
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: "Events retrieved",
+      data: events,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: "error",
+      message: error.message,
+    });
+  }
+};
+
+const getEvent = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const event = await eventModel.findOne({ _id: eventId });
+
+    if (!event) {
+      return res.status(404).json({
+        status: "error",
+        message: "The event is not found",
+      });
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: "An event retrieved",
+      data: event,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: "error",
+      message: error.message,
+    });
+  }
+};
 
 // Add a new event
 const addEvent = async (req, res) => {
   try {
     const createdBy = res.locals.author;
-    const { eventName, category, location, dateTime } = JSON.parse(
-      req.body.data
-    );
+    const { eventName, category, description, location, dateTime } = req.body;
 
-    const errors = [];
+    const errors = {};
 
     if (!eventName) {
-      errors.push("Event Name is required.");
+      errors.eventName = "Event Name is required.";
     }
 
     if (!category) {
-      errors.push("Category is required.");
+      errors.category = "Category is required.";
+    }
+
+    if (!description) {
+      errors.description = "Description is required.";
     }
 
     if (!location) {
-      errors.push("Location is required.");
+      errors.location = "Location is required.";
     }
 
     if (!dateTime) {
-      errors.push("Date and Time is required.");
+      errors.dateTime = "Date and Time is required.";
     }
 
-    if (errors.length > 0) {
+    if (Object.keys(errors).length > 0) {
       return res
         .status(400)
         .json({ status: "error", message: "Validation failed", errors });
     }
+
     const parts = req.file.path.split("/");
     const publicId = parts[parts.length - 1].split(".")[0];
 
@@ -68,15 +121,15 @@ const addEvent = async (req, res) => {
       imagePublicId: publicId,
       category,
       createdBy,
+      description,
       location,
       dateTime,
     });
+
     const savedEvent = await event.save();
     return res
       .status(201)
       .json({ status: "success", message: "Event added", data: savedEvent });
-
-    // Handle any errors during the upload
   } catch (error) {
     return res.status(500).json({ status: "error", message: error.message });
   }
@@ -154,7 +207,6 @@ const editEvent = async (req, res) => {
         .json({ status: "error", message: "Invalid event ID." });
     }
     // Check if at least one field has been provided
-    console.log(req.body);
 
     if (Object.keys(req.body).length === 0 && !req.file) {
       return res.status(400).json({
@@ -215,4 +267,6 @@ module.exports = {
   deleteEvent,
   editEvent,
   getEventsByUsers,
+  getEvent,
+  getCategory,
 };
