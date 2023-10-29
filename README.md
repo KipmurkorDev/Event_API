@@ -37,6 +37,8 @@ To begin using this project, follow these steps:
 The project is structured as follows:
 
 - `GET "/events/"`: Retrieve all events.
+- `GET "/:eventId"`: Retrieve a specific event.
+- `POST "/category"`: Get the category of an event.
 - Middleware: `.use(authMiddleware)`. Authentication is required for the routes below.
 - `GET "/events/my-events"`: Retrieve events created by the user.
 - `POST "/events/"`: Create a new event.
