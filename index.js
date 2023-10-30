@@ -6,7 +6,11 @@ const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const morgan = require("morgan");
 const router = require("./Routers/index");
-app.use(cors());
+const corsOptions = {
+  origin: "*",
+};
+
+app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(morgan("tiny"));
 app.use(express.static("uploads"));
